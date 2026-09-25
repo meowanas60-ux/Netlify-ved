@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>DownBot - Video Downloader</title>
+  <meta name="description" content="Download publicly available videos and audio from supported platforms.">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      background:
+        radial-gradient(circle at top, #172554 0, #080b16 42%, #030712 100%);
+      color: #fff;
+    }
+
+    .container {
+      width: min(920px, calc(100% - 30px));
+      margin: auto;
+    }
+
+    header {
+      padding: 22px 0;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+    }
+
+    .logo {
+      font-size: 22px;
+      font-weight: 800;
+    }
+
+    .logo span {
+      color: #38bdf8;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 12px;
+      color: #86efac;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 12px #22c55e;
+    }
+
+    main {
+      padding: 70px 0 45px;
+      text-align: center;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 7px 13px;
+      border-radius: 999px;
+      background: rgba(56,189,248,.1);
+      border: 1px solid rgba(56,189,248,.2);
+      color: #7dd3fc;
+      font-size: 12px;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      font-size: clamp(34px, 7vw, 64px);
+      line-height: 1.05;
+      margin-bottom: 18px;
+    }
+
+    h1 span {
+      color: #38bdf8;
+    }
+
+    .subtitle {
+      max-width: 650px;
+      margin: auto;
+      color: #9ca3af;
+      font-size: 16px;
+      line-height: 1.7;
+    }
+
+    .card {
+      max-width: 720px;
+      margin: 35px auto 0;
+      padding: 22px;
+      border-radius: 20px;
+      background: rgba(15,23,42,.86);
+      border: 1px solid rgba(255,255,255,.09);
+      box-shadow: 0 25px 80px rgba(0,0,0,.35);
+      text-align: left;
+    }
+
+    .label {
+      display: block;
+      color: #d1d5db;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .url-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    input[type="url"] {
+      flex: 1;
+      min-width: 0;
+      height: 52px;
+      border-radius: 12px;
+      border: 1px solid #334155;
+      background: #020617;
+      color: #fff;
+      padding: 0 15px;
+      outline: none;
+      font-size: 14px;
+    }
+
+    input[type="url"]:focus {
+      border-color: #38bdf8;
+      box-shadow: 0 0 0 3px rgba(56,189,248,.1);
+    }
+
+    .download-btn {
+      height: 52px;
+      border: 0;
+      border-radius: 12px;
+      padding: 0 23px;
+      background: linear-gradient(135deg,#0ea5e9,#2563eb);
+      color: white;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .download-btn:hover {
+      filter: brightness(1.1);
+    }
+
+    .download-btn:disabled {
+      opacity: .6;
+      cursor: wait;
+    }
+
+    .options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      margin-top: 16px;
+      color: #9ca3af;
+      font-size: 13px;
+    }
+
+    select {
+      background: #020617;
+      color: #e5e7eb;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 7px 10px;
+      outline: none;
+    }
+
+    .check {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .result {
+      display: none;
+      margin-top: 18px;
+      padding: 16px;
+      border-radius: 13px;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    .result.loading {
+      display: block;
+      background: #0f172a;
+      border: 1px solid #334155;
+      color: #cbd5e1;
+    }
+
+    .result.success {
+      display: block;
+      background: #052e16;
+      border: 1px solid #166534;
+    }
+
+    .result.error {
+      display: block;
+      background: #2d0a0a;
+      border: 1px solid #7f1d1d;
+      color: #fecaca;
+    }
+
+    .result a {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 11px 17px;
+      border-radius: 9px;
+      background: #16a34a;
+      color: white;
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .result a:hover {
+      background: #15803d;
+    }
+
+    .features {
+      display: grid;
+      grid-template-columns: repeat(3,1fr);
+      gap: 15px;
+      margin-top: 45px;
+    }
+
+    .feature {
+      padding: 22px 15px;
+      background: rgba(15,23,42,.6);
+      border: 1px solid rgba(255,255,255,.07);
+      border-radius: 15px;
+    }
+
+    .icon {
+      font-size: 25px;
+      margin-bottom: 10px;
+    }
+
+    .feature h3 {
+      font-size: 14px;
+      margin-bottom: 7px;
+    }
+
+    .feature p {
+      color: #6b7280;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .platforms {
+      margin-top: 45px;
+      color: #6b7280;
+      font-size: 12px;
+    }
+
+    .platform-list {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .platform {
+      padding: 8px 12px;
+      border: 1px solid rgba(255,255,255,.07);
+      border-radius: 9px;
+      background: rgba(255,255,255,.03);
+    }
+
+    footer {
+      padding: 30px 0;
+      text-align: center;
+      color: #4b5563;
+      font-size: 11px;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,.25);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      vertical-align: -2px;
+      margin-right: 7px;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @media (max-width: 650px) {
+      main {
+        padding-top: 45px;
+      }
+
+      .url-row {
+        flex-direction: column;
+      }
+
+      .download-btn {
+        width: 100%;
+      }
+
+      .features {
+        grid-template-columns: 1fr;
+      }
+
+      .card {
+        padding: 16px;
+      }
+
+      h1 {
+        font-size: 39px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="container nav">
+    <div class="logo">Down<span>Bot</span></div>
+
+    <div class="status">
+      <span class="dot"></span>
+      Service Online
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="container">
+
+    <div class="badge">⚡ FAST VIDEO DOWNLOADER</div>
+
+    <h1>
+      Download Videos<br>
+      <span>Simply & Fast</span>
+    </h1>
+
+    <p class="subtitle">
+      Paste a publicly available video URL below and download the available
+      video or audio file directly.
+    </p>
+
+    <div class="card">
+
+      <label class="label" for="url">
+        Video URL
+      </label>
+
+      <div class="url-row">
+
+        <input
+          id="url"
+          type="url"
+          placeholder="https://..."
+          autocomplete="off"
+          spellcheck="false"
+        >
+
+        <button
+          id="downloadBtn"
+          class="download-btn"
+          onclick="downloadVideo()"
+        >
+          ⬇ Download
+        </button>
+
+      </div>
+
+      <div class="options">
+
+        <label>
+          Quality:
+          <select id="quality">
+            <option value="best">Best Available</option>
+            <option value="1080">1080p</option>
+            <option value="720">720p</option>
+            <option value="480">480p</option>
+            <option value="360">360p</option>
+          </select>
+        </label>
+
+        <label class="check">
+          <input id="audioOnly" type="checkbox">
+          Audio / MP3
+        </label>
+
+      </div>
+
+      <div id="result" class="result"></div>
+
+    </div>
+
+    <div class="features">
+
+      <div class="feature">
+        <div class="icon">⚡</div>
+        <h3>Fast Processing</h3>
+        <p>
+          Your request is processed by the server and the generated file
+          is returned directly to your browser.
+        </p>
+      </div>
+
+      <div class="feature">
+        <div class="icon">🎵</div>
+        <h3>Video & Audio</h3>
+        <p>
+          Download available video files or extract audio as MP3.
+        </p>
+      </div>
+
+      <div class="feature">
+        <div class="icon">🔒</div>
+        <h3>Simple & Private</h3>
+        <p>
+          Temporary downloaded files are removed from the server after
+          the response is finished.
+        </p>
+      </div>
+
+    </div>
+
+    <div class="platforms">
+
+      Supported popular platforms
+
+      <div class="platform-list">
+        <span class="platform">YouTube</span>
+        <span class="platform">TikTok</span>
+        <span class="platform">Instagram</span>
+        <span class="platform">Facebook</span>
+        <span class="platform">X</span>
+        <span class="platform">Reddit</span>
+        <span class="platform">More</span>
+      </div>
+
+    </div>
+
+  </div>
+</main>
+
+<footer>
+  © 2026 DownBot · Use only for content you are allowed to download.
+</footer>
+
+<script>
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, function(c) {
+    return {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#039;"
+    }[c];
+  });
+}
+
+
+function setResult(type, html) {
+
+  const result = document.getElementById("result");
+
+  result.className = "result " + type;
+
+  result.innerHTML = html;
+
+  result.scrollIntoView({
+    behavior: "smooth",
+    block: "nearest"
+  });
+}
+
+
+async function downloadVideo() {
+
+  const input = document.getElementById("url");
+  const button = document.getElementById("downloadBtn");
+  const audioOnly = document.getElementById("audioOnly").checked;
+
+  const url = input.value.trim();
+
+  if (!url) {
+
+    setResult(
+      "error",
+      "❌ Please paste a video URL first."
+    );
+
+    input.focus();
+
+    return;
+  }
+
+
+  if (!/^https?:\/\/\S+/i.test(url)) {
+
+    setResult(
+      "error",
+      "❌ Please enter a valid http/https URL."
+    );
+
+    return;
+  }
+
+
+  button.disabled = true;
+
+  button.innerHTML =
+    '<span class="spinner"></span> Processing...';
+
+
+  setResult(
+    "loading",
+    '<span class="spinner"></span> Downloading your file. Please wait...'
+  );
+
+
+  try {
+
+    const response = await fetch("/api/download", {
+
+      method: "POST",
+
+      headers: {
+        "Content-Type": "application/json"
+      },
+
+      body: JSON.stringify({
+        url: url,
+        audio_only: audioOnly
+      })
+
+    });
+
+
+    const contentType =
+      response.headers.get("content-type") || "";
+
+
+    if (!response.ok) {
+
+      let message =
+        "Download failed. Please try again.";
+
+      if (contentType.includes("application/json")) {
+
+        const data = await response.json();
+
+        if (data && data.error) {
+          message = data.error;
+        }
+
+      } else {
+
+        const text = await response.text();
+
+        if (text) {
+          message = text.substring(0, 300);
+        }
+
+      }
+
+      throw new Error(message);
+    }
+
+
+    if (!contentType.includes("video") &&
+        !contentType.includes("audio") &&
+        !contentType.includes("octet-stream")) {
+
+      throw new Error(
+        "Server returned an unexpected response."
+      );
+
+    }
+
+
+    const blob = await response.blob();
+
+
+    const disposition =
+      response.headers.get("Content-Disposition") || "";
+
+
+    let filename =
+      audioOnly ? "download.mp3" : "download.mp4";
+
+
+    const match =
+      disposition.match(/filename="?([^"]+)"?/i);
+
+
+    if (match && match[1]) {
+      filename = match[1];
+    }
+
+
+    const blobUrl =
+      window.URL.createObjectURL(blob);
+
+
+    const link =
+      document.createElement("a");
+
+
+    link.href = blobUrl;
+
+    link.download = filename;
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    link.remove();
+
+
+    setTimeout(function() {
+
+      window.URL.revokeObjectURL(blobUrl);
+
+    }, 5000);
+
+
+    setResult(
+      "success",
+      "✅ Download is ready!<br>" +
+      "<small>Your browser should have started the download automatically.</small>"
+    );
+
+
+  } catch (error) {
+
+    console.error(error);
+
+
+    setResult(
+      "error",
+      "❌ " +
+      escapeHtml(
+        error.message ||
+        "Download failed. Please try again."
+      )
+    );
+
+  } finally {
+
+    button.disabled = false;
+
+    button.innerHTML = "⬇ Download";
+
+  }
+
+}
+
+
+document.getElementById("url").addEventListener(
+  "keydown",
+  function(event) {
+
+    if (event.key === "Enter") {
+      downloadVideo();
+    }
+
+  }
+);
+
+</script>
+
+</body>
+</html>
