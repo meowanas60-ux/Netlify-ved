@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: downbot
+    runtime: python
+    plan: free
+
+    buildCommand: pip install -r requirements.txt
+
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --timeout 300
+
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.0
+
+      - key: MAX_DOWNLOAD_MB
+        value: "300"
